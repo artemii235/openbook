@@ -43,6 +43,7 @@ use anyhow::{Error, Result};
 pub enum SdkVersion {
     /// OpenBook v1.
     V1,
+    #[cfg(feature = "v2")]
     /// OpenBook v2.
     V2,
 }
@@ -50,6 +51,7 @@ pub enum SdkVersion {
 #[derive(Clone)]
 pub enum SdkClient {
     OBClientV1(OBClientV1),
+    #[cfg(feature = "v2")]
     OBClientV2(OBClientV2),
 }
 
@@ -162,8 +164,8 @@ struct App {
 impl Default for App {
     fn default() -> App {
         App {
-            rpc_url_input: Input::new("https://api.mainnet-beta.solana.com".to_string()),
-            key_path_input: Input::new("~/.config/solana/id.json".to_string()),
+            rpc_url_input: Input::new(std::env::var("RPC_URL").unwrap_or("https://api.mainnet-beta.solana.com".to_string())),
+            key_path_input: Input::new(std::env::var("KEY_PATH").unwrap_or("~/.config/solana/id.json".to_string())),
             market_id_input: Input::default(),
             side_input: Input::default(),
             target_price_input: Input::default(),
@@ -272,6 +274,7 @@ async fn run_app<B: Backend>(
                                     ob_client.owner = owner.into();
                                     app.ob_client = Some(SdkClient::OBClientV1(ob_client));
                                 }
+                                #[cfg(feature = "v2")]
                                 SdkVersion::V2 => {
                                     let mut ob_client =
                                         OBClientV2::new(commitment_config, market_id, false, true)
@@ -386,6 +389,7 @@ async fn run_app<B: Backend>(
                                         .join(", ");
                                     app.wallet_info.insert("Open Bids".to_string(), open_bids);
                                 }
+                                #[cfg(feature = "v2")]
                                 SdkClient::OBClientV2(ob_client) => {
                                     app.market_info.insert(
                                         "Market Name".to_string(),
@@ -538,6 +542,7 @@ async fn run_app<B: Backend>(
                             },
                             SelectedTab::Tab2 => match app.ob_client.clone().unwrap() {
                                 SdkClient::OBClientV1(_ob_client) => {}
+                                #[cfg(feature = "v2")]
                                 SdkClient::OBClientV2(ob_client) => {
                                     let market_args = CreateMarketArgs {
                                         name: app.market_name.to_string(),
@@ -636,6 +641,7 @@ async fn run_app<B: Backend>(
                                         _ => {}
                                     }
                                 }
+                                #[cfg(feature = "v2")]
                                 SdkClient::OBClientV2(_ob_client) => {}
                             },
                             SelectedTab::Tab5 => {}
@@ -958,6 +964,7 @@ fn ui(frame: &mut Frame, app: &mut App, version: SdkVersion) {
                 .centered();
             frame.render_widget(ob_version.clone(), vertical[0]);
         }
+        #[cfg(feature = "v2")]
         SdkVersion::V2 => {
             let ob_version = Line::raw("📖 OpenBook 2️⃣")
                 .fg(Color::LightGreen)

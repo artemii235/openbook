@@ -561,7 +561,7 @@ impl OBClient {
         let base_lot_factor = self.market_info.coin_lot_size as f64;
         let quote_lot_factor = self.market_info.pc_lot_size as f64;
 
-        let price_factor = quote_d_factor * base_lot_factor / base_d_factor / quote_lot_factor;
+        let price_factor = 10000.0;
 
         let (input_ata, price) = match side {
             Side::Bid => {
@@ -695,7 +695,10 @@ impl OBClient {
     pub async fn cancel_orders(&self, execute: bool) -> Result<Option<OrderReturnType>, Error> {
         let mut ixs = Vec::new();
 
-        for oid in &self.open_orders.open_bids {
+        for (i, oid) in self.open_orders.open_bids.iter().enumerate() {
+            if i > 12 {
+                break;
+            }
             let ix = openbook_dex::instruction::cancel_order(
                 &self.market_info.program_id,
                 &self.market_info.market_address,
@@ -710,7 +713,11 @@ impl OBClient {
             ixs.push(ix);
         }
 
-        for oid in &self.open_orders.open_asks {
+        for (i, oid) in self.open_orders.open_asks.iter().enumerate() {
+            if i > 12 {
+                break;
+            }
+
             let ix = openbook_dex::instruction::cancel_order(
                 &self.market_info.program_id,
                 &self.market_info.market_address,
